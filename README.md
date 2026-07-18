@@ -128,31 +128,84 @@ scripts/verify devbox-remac
 
 ## Omnigent host service
 
-Log in to the remote Omnigent server once; the token and default server URL
-are stored in the persistent guest home directory:
+Omnigent is provisioned as a systemd user service. Do not use `sudo` with the
+commands in this section.
+
+Log in to the remote Omnigent server once:
 
 ```bash
 omnigent login https://YOUR_OMNIGENT_SERVER
 ```
 
-The provisioned systemd user service is installed but disabled by default, so
-the host runs only when requested and continues after SSH disconnects:
+The token and default server URL are stored under `~/.omnigent` in the
+persistent guest home directory. They survive a normal VM restart, so another
+login is only needed if the token expires or is revoked, or if the server is
+changed.
+
+### Run on demand
+
+The service is installed but disabled by default. Start it when needed:
 
 ```bash
 systemctl --user start omnigent-host
 systemctl --user status omnigent-host
+omnigent host status
+```
+
+Provisioning enables systemd user lingering, so the host continues running
+after the SSH session disconnects. Follow its logs with:
+
+```bash
 journalctl --user -u omnigent-host -f
+```
+
+Stop it when it is no longer needed:
+
+```bash
 systemctl --user stop omnigent-host
 ```
 
-To start the host automatically whenever the VM boots:
+Stopping the service terminates active Omnigent sessions. After a VM reboot,
+run the same `start` command to launch it again.
+
+### Start automatically at boot
+
+Enable and immediately start the service:
 
 ```bash
 systemctl --user enable --now omnigent-host
 ```
 
-Disable automatic startup without stopping the currently running host with
-`systemctl --user disable omnigent-host`.
+Disable future automatic starts without stopping the currently running host:
+
+```bash
+systemctl --user disable omnigent-host
+```
+
+Disable it and stop it immediately:
+
+```bash
+systemctl --user disable --now omnigent-host
+```
+
+### Recover from an old transient service
+
+If Omnigent was previously launched with `systemd-run`, enabling the permanent
+unit may fail with an error saying that
+`/run/user/.../systemd/transient/omnigent-host.service` is transient or
+generated. When it is safe to interrupt active Omnigent sessions, replace the
+old transient unit with the provisioned unit:
+
+```bash
+systemctl --user stop omnigent-host
+systemctl --user reset-failed omnigent-host
+systemctl --user daemon-reload
+systemctl --user enable --now omnigent-host
+```
+
+A VM reboot also removes the transient unit; after reboot, run the final
+`enable --now` command. The permanent unit executes
+`omnigent host --non-interactive` and uses the server saved by `omnigent login`.
 
 Commit and push tracked configuration changes. Never commit `.env` or
 `.secrets/`.
