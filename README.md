@@ -126,6 +126,34 @@ scripts/provision devbox-remac
 scripts/verify devbox-remac
 ```
 
+## Omnigent host service
+
+Log in to the remote Omnigent server once; the token and default server URL
+are stored in the persistent guest home directory:
+
+```bash
+omnigent login https://YOUR_OMNIGENT_SERVER
+```
+
+The provisioned systemd user service is installed but disabled by default, so
+the host runs only when requested and continues after SSH disconnects:
+
+```bash
+systemctl --user start omnigent-host
+systemctl --user status omnigent-host
+journalctl --user -u omnigent-host -f
+systemctl --user stop omnigent-host
+```
+
+To start the host automatically whenever the VM boots:
+
+```bash
+systemctl --user enable --now omnigent-host
+```
+
+Disable automatic startup without stopping the currently running host with
+`systemctl --user disable omnigent-host`.
+
 Commit and push tracked configuration changes. Never commit `.env` or
 `.secrets/`.
 

@@ -27,3 +27,25 @@
     PATH: >-
       {{ devbox_guest_home }}/.nix-profile/bin:{{ devbox_guest_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
     SHELL: /usr/bin/zsh
+
+- name: Keep the user service manager available after SSH logout
+  become: true
+  ansible.builtin.command: "loginctl enable-linger {{ lima_guest_user }}"
+  args:
+    creates: "/var/lib/systemd/linger/{{ lima_guest_user }}"
+
+- name: Create the systemd user unit directory
+  ansible.builtin.file:
+    path: "{{ devbox_guest_home }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Install the persistent Omnigent host user service
+  ansible.builtin.template:
+    src: omnigent-host.service.j2
+    dest: "{{ devbox_guest_home }}/.config/systemd/user/omnigent-host.service"
+    mode: '0644'
+
+- name: Reload systemd user units
+  ansible.builtin.command: systemctl --user daemon-reload
+  changed_when: false

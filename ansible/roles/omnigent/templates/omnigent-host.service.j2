@@ -1,0 +1,15 @@
+[Unit]
+Description=Omnigent remote agent host
+
+[Service]
+Type=simple
+Environment="PATH=%h/.local/bin:%h/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin"
+WorkingDirectory=%h
+ExecStart=%h/.local/bin/omnigent host --non-interactive
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
