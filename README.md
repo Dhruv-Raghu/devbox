@@ -38,6 +38,14 @@ Create the following ignored local files. They must never be committed:
 .secrets/ssh/id_ed25519_github_dhruv.pub
 ```
 
+Every regular file directly in `.secrets/ssh/` is deployed to the guest’s
+`~/.ssh/` directory on each provisioning run. Add further private/public key
+pairs there—for example `id_ed25519_github_aadi` and
+`id_ed25519_github_aadi.pub`—then update `.secrets/ssh/config`; the next
+`scripts/provision devbox-remac` copies them across. This directory is ignored
+by Git, so it is your controller-local source of truth for outbound SSH
+credentials.
+
 Set the Tailscale authentication key in `.env`:
 
 ```bash

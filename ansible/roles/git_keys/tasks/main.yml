@@ -4,12 +4,27 @@
     path: "{{ devbox_guest_home }}/.ssh"
     state: directory
     mode: '0700'
-- name: Deploy dedicated outbound Git SSH files
+- name: Discover controller-managed outbound SSH files
+  ansible.builtin.set_fact:
+    devbox_ssh_secret_files: >-
+      {{ query('ansible.builtin.fileglob', playbook_dir + '/../../.secrets/ssh/*') }}
+
+- name: Require at least one controller-managed SSH file
+  ansible.builtin.assert:
+    that:
+      - devbox_ssh_secret_files | length > 0
+    fail_msg: >-
+      Add the SSH config and any outbound key files under .secrets/ssh/ on the
+      controller before provisioning.
+
+- name: Deploy all controller-managed outbound SSH files
   ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../.secrets/ssh/{{ item }}"
-    dest: "{{ devbox_guest_home }}/.ssh/{{ item }}"
-    mode: "{{ '0644' if item.endswith('.pub') else '0600' }}"
-  loop: [config, id_ed25519_github_dhruv, id_ed25519_github_dhruv.pub]
+    src: "{{ item }}"
+    dest: "{{ devbox_guest_home }}/.ssh/{{ item | basename }}"
+    mode: "{{ '0644' if (item | basename).endswith('.pub') else '0600' }}"
+  loop: "{{ devbox_ssh_secret_files }}"
+  loop_control:
+    label: "{{ item | basename }}"
   no_log: true
 
 - name: Install GitHub's published SSH host keys
