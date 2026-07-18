@@ -1,0 +1,40 @@
+vmType: qemu
+arch: x86_64
+
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img"
+    arch: "x86_64"
+
+cpus: 2
+memory: 4GiB
+disk: 80GiB
+
+mounts: []
+
+containerd:
+  system: false
+  user: false
+
+ssh:
+  localPort: 0
+  loadDotSSHPubKeys: true
+
+firmware:
+  legacyBIOS: true
+
+param:
+  internal_netplanOptional: "true"
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/sh
+      set -eux
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install -y ca-certificates curl openssh-server
+      curl -fsSL https://tailscale.com/install.sh | sh
+      systemctl enable ssh
+      systemctl start ssh
+      systemctl enable tailscaled
+      systemctl start tailscaled
