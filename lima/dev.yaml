@@ -19,9 +19,6 @@ ssh:
   localPort: 0
   loadDotSSHPubKeys: true
 
-firmware:
-  legacyBIOS: true
-
 param:
   internal_netplanOptional: "true"
 
