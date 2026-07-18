@@ -2,6 +2,8 @@
 # Keep secrets out of this file; personal configuration belongs in the tracked
 # dotfile packages and machine-specific values belong in ignored local files.
 
+export PATH="$HOME/.local/bin:$HOME/.nix-profile/bin:$PATH"
+
 export ZSH="$HOME/.local/share/oh-my-zsh"
 ZSH_THEME=""
 

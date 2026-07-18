@@ -19,15 +19,21 @@
 
 - name: Verify declarative Nix tools are in the profile
   ansible.builtin.command: >-
-    /bin/sh -lc 'PATH=/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$PATH;
+    /bin/sh -lc 'PATH=$HOME/.local/bin:$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH;
     command -v {{ item }}'
   loop:
     - bat
+    - bwrap
     - claude
     - codex
     - fd
     - gh
     - jq
+    - node
+    - npm
+    - omni
+    - omnigent
+    - python3.12
     - rg
     - tmux
     - uv

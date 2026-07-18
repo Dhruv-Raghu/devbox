@@ -22,6 +22,8 @@
         just
         mise
         nixd
+        nodejs_22
+        python312
         ripgrep
         shellcheck
         tmux

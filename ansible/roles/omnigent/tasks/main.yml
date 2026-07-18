@@ -1,0 +1,29 @@
+---
+- name: Download the pinned Omnigent installer
+  ansible.builtin.get_url:
+    url: >-
+      https://raw.githubusercontent.com/omnigent-ai/omnigent/{{ omnigent_installer_revision }}/scripts/install_oss.sh
+    dest: "/tmp/omnigent-install-{{ omnigent_installer_revision }}.sh"
+    checksum: "sha256:{{ omnigent_installer_sha256 }}"
+    mode: '0755'
+
+- name: Inspect the installed Omnigent version
+  ansible.builtin.command: "{{ devbox_guest_home }}/.local/bin/omnigent --version"
+  register: devbox_omnigent_version
+  changed_when: false
+  failed_when: false
+
+- name: Install the pinned Omnigent release
+  when: >-
+    devbox_omnigent_version.rc != 0 or
+    omnigent_version not in devbox_omnigent_version.stdout
+  ansible.builtin.command:
+    argv:
+      - "/tmp/omnigent-install-{{ omnigent_installer_revision }}.sh"
+      - --non-interactive
+      - --version
+      - "{{ omnigent_version }}"
+  environment:
+    PATH: >-
+      {{ devbox_guest_home }}/.nix-profile/bin:{{ devbox_guest_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+    SHELL: /usr/bin/zsh

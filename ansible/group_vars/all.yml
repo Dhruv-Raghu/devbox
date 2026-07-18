@@ -6,6 +6,7 @@ lima_guest_user: dhruv
 devbox_enable_provisioning: false
 
 base_apt_packages:
+  - bubblewrap
   - ca-certificates
   - curl
   - git

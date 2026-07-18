@@ -10,7 +10,7 @@ this repository and its ignored local secrets.
 `devbox-remac` is an Ubuntu 24.04 Lima VM with 2 vCPUs, 4 GiB of memory, and
 an 80 GiB sparse virtual disk. Provisioning installs the declared APT and Nix
 tools, Tailscale SSH, the dedicated outbound Git identity, Oh My Zsh,
-Powerlevel10k, and the GNU Stow dotfiles in this repository.
+Powerlevel10k, Omnigent, and the GNU Stow dotfiles in this repository.
 
 Inbound access is through Tailscale SSH. The deployed Git private key is only
 for outbound Git access from the VM.
@@ -112,6 +112,9 @@ Keep desired state in Git, then re-run provisioning:
 - Add OS packages to `ansible/group_vars/all.yml` under `base_apt_packages`.
 - Add developer tools to `nix/flake.nix`. Update and commit `nix/flake.lock`
   when changing Nix inputs.
+- Update the pinned Omnigent release and installer revision/checksum in
+  `ansible/group_vars/versions.yml`; provisioning installs it through its
+  verified upstream installer.
 - Add shell, Git, or terminal configuration under `dotfiles/`; GNU Stow deploys
   these into the guest home directory.
 - Replace the dedicated outbound Git keys only in ignored `.secrets/ssh/`.
