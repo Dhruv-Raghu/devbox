@@ -20,7 +20,32 @@
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../../nix/"
     dest: "{{ devbox_guest_home }}/{{ nix_guest_dir }}/"
-- name: Install declared Nix tools
-  ansible.builtin.command: "/nix/var/nix/profiles/default/bin/nix --extra-experimental-features 'nix-command flakes' profile install .#devbox-tools"
+- name: Inspect the user Nix profile
+  ansible.builtin.command: >-
+    /nix/var/nix/profiles/default/bin/nix
+    --extra-experimental-features 'nix-command flakes'
+    profile list --json
+  register: devbox_nix_profile
+  changed_when: false
+
+- name: Install the declared Nix tool profile initially
+  when: >-
+    'devbox-tools' not in
+    ((devbox_nix_profile.stdout | from_json).elements | default({}))
+  ansible.builtin.command: >-
+    /nix/var/nix/profiles/default/bin/nix
+    --extra-experimental-features 'nix-command flakes'
+    profile add .#devbox-tools
+  args:
+    chdir: "{{ devbox_guest_home }}/{{ nix_guest_dir }}"
+
+- name: Upgrade the declared Nix tool profile after repository changes
+  when: >-
+    'devbox-tools' in
+    ((devbox_nix_profile.stdout | from_json).elements | default({}))
+  ansible.builtin.command: >-
+    /nix/var/nix/profiles/default/bin/nix
+    --extra-experimental-features 'nix-command flakes'
+    profile upgrade devbox-tools
   args:
     chdir: "{{ devbox_guest_home }}/{{ nix_guest_dir }}"

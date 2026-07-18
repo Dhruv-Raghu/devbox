@@ -1,12 +1,16 @@
 {
   description = "Reproducible developer tooling for devbox";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
   outputs = { self, nixpkgs }:
     let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfreePredicate = pkg:
+          builtins.elem (nixpkgs.lib.getName pkg) [ "claude-code" ];
+      };
       tools = with pkgs; [
         bat
         btop
@@ -24,6 +28,8 @@
         tree
         uv
         yq-go
+        claude-code
+        codex
       ];
     in {
       packages.${system}.devbox-tools = pkgs.buildEnv {

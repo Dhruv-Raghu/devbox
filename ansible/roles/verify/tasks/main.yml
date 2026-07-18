@@ -23,6 +23,8 @@
     command -v {{ item }}'
   loop:
     - bat
+    - claude
+    - codex
     - fd
     - gh
     - jq
