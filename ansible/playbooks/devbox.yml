@@ -1,0 +1,19 @@
+---
+- name: Provision a Lima devbox
+  hosts: devbox
+  gather_facts: false
+  pre_tasks:
+    - name: Refuse provisioning during scaffold phase
+      ansible.builtin.assert:
+        that: devbox_enable_provisioning | bool
+        fail_msg: >-
+          Provisioning is intentionally disabled until the reviewed roles and
+          dynamic Lima inventory are implemented.
+  roles:
+    - bootstrap
+    - base
+    - tailscale
+    - git_keys
+    - dotfiles
+    - nix
+    - verify

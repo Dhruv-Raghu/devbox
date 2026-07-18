@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo 'shell is intentionally disabled during scaffold phase.' >&2
+exit 2

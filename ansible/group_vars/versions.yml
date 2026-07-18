@@ -1,0 +1,6 @@
+---
+# Pin immutable revisions and verified checksums before enabling each role.
+nix_installer_version: TODO
+nix_installer_sha256: TODO
+oh_my_zsh_revision: TODO
+powerlevel10k_revision: TODO

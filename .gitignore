@@ -1,0 +1,14 @@
+# Controller-local secrets
+.env
+.secrets/
+
+# Generated per-instance state
+.runtime/
+
+# Ansible and Python caches
+*.retry
+__pycache__/
+*.py[cod]
+
+# macOS metadata
+.DS_Store

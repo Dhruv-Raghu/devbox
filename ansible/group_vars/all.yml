@@ -1,0 +1,23 @@
+---
+# These values are declarations only; provisioning remains disabled in scaffold
+# phase. The guest home must be discovered from Ansible facts at runtime.
+devbox_name: devbox-remac
+lima_guest_user: dhruv
+devbox_enable_provisioning: false
+
+base_apt_packages:
+  - ca-certificates
+  - curl
+  - git
+  - openssh-server
+  - sudo
+  - stow
+  - zsh
+
+tailscale_tags:
+  - tag:devbox
+tailscale_ssh: true
+tailscale_ephemeral: false
+
+dotfiles_guest_dir: .local/share/devbox-dotfiles
+nix_guest_dir: .local/share/devbox-nix
