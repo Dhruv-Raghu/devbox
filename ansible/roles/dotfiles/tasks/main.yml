@@ -1,2 +1,43 @@
 ---
-# Scaffold only. GNU Stow dotfile deployment is not implemented.
+- name: Install Oh My Zsh at its pinned revision
+  ansible.builtin.git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: "{{ devbox_guest_home }}/.local/share/oh-my-zsh"
+    version: "{{ oh_my_zsh_revision }}"
+    update: true
+
+- name: Install Powerlevel10k at its pinned revision
+  ansible.builtin.git:
+    repo: https://github.com/romkatv/powerlevel10k.git
+    dest: "{{ devbox_guest_home }}/.local/share/powerlevel10k"
+    version: "{{ powerlevel10k_revision }}"
+    update: true
+
+- name: Deploy tracked dotfile package roots
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../dotfiles/"
+    dest: "{{ devbox_guest_home }}/{{ dotfiles_guest_dir }}/"
+    mode: preserve
+- name: Inspect existing Zsh configuration
+  ansible.builtin.stat:
+    path: "{{ devbox_guest_home }}/.zshrc"
+  register: devbox_zshrc
+- name: Preserve pre-existing Zsh configuration before Stow
+  when: devbox_zshrc.stat.exists and not devbox_zshrc.stat.islnk
+  ansible.builtin.command:
+    argv:
+      - mv
+      - "{{ devbox_guest_home }}/.zshrc"
+      - "{{ devbox_guest_home }}/.zshrc.pre-devbox"
+  args:
+    creates: "{{ devbox_guest_home }}/.zshrc.pre-devbox"
+- name: Apply dotfiles with GNU Stow
+  ansible.builtin.command:
+    argv: [stow, --restow, --dir, "{{ devbox_guest_home }}/{{ dotfiles_guest_dir }}", --target, "{{ devbox_guest_home }}", zsh, p10k, git, tmux]
+  changed_when: false
+
+- name: Make Zsh the default login shell
+  become: true
+  ansible.builtin.user:
+    name: "{{ lima_guest_user }}"
+    shell: /usr/bin/zsh

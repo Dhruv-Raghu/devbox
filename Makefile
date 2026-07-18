@@ -3,9 +3,8 @@
 .PHONY: help create provision verify shell destroy
 
 help:
-	@printf '%s\n' 'Devbox controller scaffold (no lifecycle actions are enabled yet).'
-	@printf '%s\n' 'See docs/DEVBOX_CONTROLLER_PLAN.md before implementing targets.'
+	@printf '%s\n' 'Usage: make <create|provision|verify|shell|destroy> INSTANCE=<name>'
 
 create provision verify shell destroy:
-	@printf '%s\n' 'This lifecycle target is intentionally disabled during scaffold phase.' >&2
-	@exit 2
+	@test -n "$(INSTANCE)" || { printf '%s\n' 'INSTANCE is required' >&2; exit 2; }
+	@./scripts/$@ "$(INSTANCE)"

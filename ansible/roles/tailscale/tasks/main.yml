@@ -1,2 +1,63 @@
 ---
-# Scaffold only. Tailscale enrollment is not implemented.
+- name: Ensure the Tailscale daemon is enabled and running
+  become: true
+  ansible.builtin.systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+
+- name: Inspect Tailscale state
+  become: true
+  ansible.builtin.command: tailscale status --json
+  register: devbox_tailscale_status
+  changed_when: false
+
+- name: Join the tailnet as a tagged Tailscale SSH node
+  when: (devbox_tailscale_status.stdout | from_json).BackendState != 'Running'
+  block:
+    - name: Require a Tailscale auth key for first enrollment
+      ansible.builtin.assert:
+        that:
+          - lookup('ansible.builtin.env', 'TS_AUTHKEY') | length > 0
+        fail_msg: TS_AUTHKEY is required in the controller .env file for first enrollment.
+      no_log: true
+
+    - name: Create a temporary auth key file
+      become: true
+      ansible.builtin.copy:
+        content: "{{ lookup('ansible.builtin.env', 'TS_AUTHKEY') }}"
+        dest: /run/devbox-tailscale-authkey
+        owner: root
+        group: root
+        mode: '0600'
+      no_log: true
+
+    - name: Enroll Tailscale node
+      become: true
+      ansible.builtin.command:
+        argv:
+          - tailscale
+          - up
+          - "--auth-key=file:/run/devbox-tailscale-authkey"
+          - "--hostname={{ devbox_name }}"
+          - "--advertise-tags={{ tailscale_tags | join(',') }}"
+          - --ssh
+      no_log: true
+  always:
+    - name: Remove the temporary auth key file
+      become: true
+      ansible.builtin.file:
+        path: /run/devbox-tailscale-authkey
+        state: absent
+      no_log: true
+
+- name: Verify connected Tailscale state
+  become: true
+  ansible.builtin.command: tailscale status --json
+  register: devbox_tailscale_verified
+  changed_when: false
+
+- name: Assert that Tailscale is connected
+  ansible.builtin.assert:
+    that:
+      - (devbox_tailscale_verified.stdout | from_json).BackendState == 'Running'

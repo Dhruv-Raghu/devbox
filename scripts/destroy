@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
-echo 'destroy is intentionally disabled during scaffold phase.' >&2
-exit 2
+instance=${1:?Usage: scripts/destroy INSTANCE}
+[[ "${DEVBOX_ALLOW_DESTROY:-}" == 1 ]] || {
+  echo 'Refusing destruction. Re-run with DEVBOX_ALLOW_DESTROY=1 scripts/destroy INSTANCE.' >&2
+  exit 2
+}
+
+limactl list --json | grep -Fq "\"name\":\"$instance\"" || {
+  echo "Lima instance not found: $instance" >&2
+  exit 2
+}
+limactl delete --force "$instance"

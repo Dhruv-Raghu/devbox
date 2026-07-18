@@ -1,2 +1,26 @@
 ---
-# Scaffold only. Verified Nix installation/profile deployment is not implemented.
+- name: Download pinned Nix installer
+  become: true
+  ansible.builtin.get_url:
+    url: "https://releases.nixos.org/nix/nix-{{ nix_installer_version }}/install"
+    dest: "/tmp/nix-{{ nix_installer_version }}-install"
+    checksum: "sha256:{{ nix_installer_sha256 }}"
+    mode: '0755'
+- name: Install Nix multi-user daemon
+  become: true
+  ansible.builtin.command: "bash /tmp/nix-{{ nix_installer_version }}-install --daemon --yes"
+  args:
+    creates: /nix/var/nix/profiles/default/bin/nix
+- name: Enable Nix flakes
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/nix/nix.conf
+    line: 'experimental-features = nix-command flakes'
+- name: Deploy Nix flake
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../nix/"
+    dest: "{{ devbox_guest_home }}/{{ nix_guest_dir }}/"
+- name: Install declared Nix tools
+  ansible.builtin.command: "/nix/var/nix/profiles/default/bin/nix --extra-experimental-features 'nix-command flakes' profile install .#devbox-tools"
+  args:
+    chdir: "{{ devbox_guest_home }}/{{ nix_guest_dir }}"

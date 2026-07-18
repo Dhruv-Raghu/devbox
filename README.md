@@ -4,11 +4,25 @@ This repository is the source of truth for disposable Lima development VMs.
 `remac` is the Ansible controller; guests are provisioned from this repository
 and must not contain irreplaceable manual state.
 
-## Current phase
+## Lifecycle
 
-The repository structure is scaffolded only. Lifecycle scripts and Ansible
-roles fail safely until their implementation is completed. They must not be
-used to alter the existing `devbox` VM yet.
+The scripts run from `remac`; use a distinct instance name while testing so the
+existing `devbox` VM remains untouched. `create` only creates a Lima VM.
+`provision` applies every Ansible role, and is safe to re-run after changing
+packages or dotfiles.
+
+```bash
+scripts/create devbox-remac
+scripts/provision devbox-remac
+scripts/verify devbox-remac
+scripts/shell devbox-remac
+```
+
+Destroying a VM is intentionally explicit:
+
+```bash
+DEVBOX_ALLOW_DESTROY=1 scripts/destroy devbox-remac
+```
 
 ## Layout
 
@@ -16,23 +30,26 @@ used to alter the existing `devbox` VM yet.
 - `ansible/`: controller-side provisioning roles and inventory.
 - `dotfiles/`: GNU Stow package roots for guest dotfiles.
 - `nix/`: reproducible guest user-space tools.
-- `scripts/`: future lifecycle entry points.
+- `scripts/`: lifecycle entry points.
 - `.env` and `.secrets/`: controller-local secrets, ignored by Git.
 
 ## Secret contract
 
-Create controller-local files only when provisioning is implemented:
+Create these ignored controller-local files before first provisioning:
 
 ```text
 .env
-.secrets/ssh/github_personal
-.secrets/ssh/github_work
+.secrets/ssh/id_ed25519_github_dhruv
+.secrets/ssh/id_ed25519_github_dhruv.pub
 .secrets/ssh/config
-.secrets/tailscale/authkey
 ```
+
+`.env` must contain `TS_AUTHKEY=...` for first Tailscale enrollment. It is not
+needed for later converges of an already enrolled VM. Use a reusable auth key
+only if you intend to destroy and recreate VMs without replacing the key.
 
 Private keys are for outbound Git access only. Inbound access will use
 Tailscale SSH. Do not put private keys in the tracked `dotfiles/` tree.
 
 See [the controller plan](docs/DEVBOX_CONTROLLER_PLAN.md) for the complete
-design and implementation sequence.
+design.

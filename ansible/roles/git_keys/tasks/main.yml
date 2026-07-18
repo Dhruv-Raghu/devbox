@@ -1,2 +1,27 @@
 ---
-# Scaffold only. Dedicated outbound Git key deployment is not implemented.
+- name: Create secure SSH directory
+  ansible.builtin.file:
+    path: "{{ devbox_guest_home }}/.ssh"
+    state: directory
+    mode: '0700'
+- name: Deploy dedicated outbound Git SSH files
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../.secrets/ssh/{{ item }}"
+    dest: "{{ devbox_guest_home }}/.ssh/{{ item }}"
+    mode: "{{ '0644' if item.endswith('.pub') else '0600' }}"
+  loop: [config, id_ed25519_github_dhruv, id_ed25519_github_dhruv.pub]
+  no_log: true
+
+- name: Install GitHub's published SSH host keys
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../files/github_known_hosts"
+    dest: "{{ devbox_guest_home }}/.ssh/known_hosts"
+    mode: '0644'
+
+- name: Verify the dedicated Git SSH identity authenticates to GitHub
+  ansible.builtin.command: ssh -o BatchMode=yes -T git@github-dhruv
+  register: devbox_github_ssh
+  changed_when: false
+  failed_when: >-
+    devbox_github_ssh.rc != 1 or
+    'successfully authenticated' not in (devbox_github_ssh.stdout ~ devbox_github_ssh.stderr)

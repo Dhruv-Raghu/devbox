@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
-echo 'shell is intentionally disabled during scaffold phase.' >&2
-exit 2
+instance=${1:?Usage: scripts/shell INSTANCE [command ...]}
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+runtime="$repo_root/.runtime/$instance"
+test -f "$runtime/known_hosts" || { echo 'Run scripts/create first' >&2; exit 2; }
+
+export DEVBOX_INSTANCE="$instance"
+export DEVBOX_RUNTIME_DIR="$runtime"
+shift
+exec limactl shell "$instance" "$@"

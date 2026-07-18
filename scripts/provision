@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-echo 'provision is intentionally disabled during scaffold phase.' >&2
-exit 2
+
+instance=${1:?Usage: scripts/provision INSTANCE}
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+runtime="$repo_root/.runtime/$instance"
+test -f "$runtime/known_hosts" || { echo 'Run scripts/create first' >&2; exit 2; }
+test -f "$repo_root/.env" || { echo '.env is required' >&2; exit 2; }
+
+set -a
+source "$repo_root/.env"
+set +a
+export DEVBOX_INSTANCE="$instance"
+export DEVBOX_RUNTIME_DIR="$runtime"
+export ANSIBLE_CONFIG="$repo_root/ansible/ansible.cfg"
+ansible-inventory --list >/dev/null
+ansible-playbook "$repo_root/ansible/playbooks/devbox.yml" --limit "$instance" -e "devbox_name=$instance" -e devbox_enable_provisioning=true

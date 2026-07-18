@@ -1,2 +1,64 @@
 ---
-# Scaffold only. End-to-end verification is not implemented.
+- name: Verify core services
+  become: true
+  ansible.builtin.command: "systemctl is-active {{ item }}"
+  loop:
+    - ssh
+    - tailscaled
+    - nix-daemon
+  changed_when: false
+  register: devbox_service_checks
+
+- name: Assert core services are active
+  ansible.builtin.assert:
+    that:
+      - item.stdout == 'active'
+  loop: "{{ devbox_service_checks.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Verify declarative Nix tools are in the profile
+  ansible.builtin.command: >-
+    /bin/sh -lc 'PATH=/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$PATH;
+    command -v {{ item }}'
+  loop:
+    - bat
+    - fd
+    - gh
+    - jq
+    - rg
+    - tmux
+    - uv
+  changed_when: false
+
+- name: Verify Stow created the expected links
+  ansible.builtin.stat:
+    path: "{{ devbox_guest_home }}/{{ item }}"
+  loop:
+    - .zshrc
+    - .p10k.zsh
+  register: devbox_dotfile_links
+
+- name: Assert expected dotfile links are present
+  ansible.builtin.assert:
+    that:
+      - item.stat.islnk | default(false)
+  loop: "{{ devbox_dotfile_links.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Verify Zsh loads the managed Powerlevel10k setup
+  ansible.builtin.command: >-
+    zsh -ic 'test -n "$POWERLEVEL9K_CONFIG_FILE" &&
+    test -r "$HOME/.local/share/powerlevel10k/powerlevel10k.zsh-theme"'
+  changed_when: false
+
+- name: Verify the deployed outbound Git key permissions
+  ansible.builtin.command: "stat -c %a {{ devbox_guest_home }}/.ssh/id_ed25519_github_dhruv"
+  register: devbox_git_key_mode
+  changed_when: false
+
+- name: Assert private Git key has restrictive permissions
+  ansible.builtin.assert:
+    that:
+      - devbox_git_key_mode.stdout == '600'

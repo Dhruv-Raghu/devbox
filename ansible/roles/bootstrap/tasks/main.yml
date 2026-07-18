@@ -1,2 +1,23 @@
 ---
-# Scaffold only. Bootstrap SSH and sudo contract validation is not implemented.
+- name: Gather guest facts
+  ansible.builtin.setup:
+
+- name: Verify the expected Lima guest user
+  ansible.builtin.command: id -un
+  register: devbox_current_user
+  changed_when: false
+
+- name: Assert the expected Lima guest user
+  ansible.builtin.assert:
+    that:
+      - devbox_current_user.stdout == lima_guest_user
+    fail_msg: >-
+      Connected as {{ devbox_current_user.stdout }}, expected {{ lima_guest_user }}.
+
+- name: Verify passwordless privilege escalation
+  ansible.builtin.command: sudo -n true
+  changed_when: false
+
+- name: Record the guest home directory
+  ansible.builtin.set_fact:
+    devbox_guest_home: "{{ ansible_facts['env']['HOME'] }}"
